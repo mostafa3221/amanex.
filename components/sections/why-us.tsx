@@ -12,10 +12,13 @@ export function WhyUs() {
   const t = translations[language]
 
   // Counter with "start only when visible"
-  const useCountUpWhenVisible = (value, duration = 2000) => {
-    const ref = useRef(null)
+  const useCountUpWhenVisible = (value: string | number, duration = 2000) => {
+    const ref = useRef<HTMLDivElement>(null)
     const [startCounting, setStartCounting] = useState(false)
     const [count, setCount] = useState(0)
+
+    const num = typeof value === "number" ? value : parseInt(value)
+    const suffix = typeof value === "string" ? value.replace(num.toString(), "") : ""
 
     useEffect(() => {
       const observer = new IntersectionObserver(
@@ -29,15 +32,11 @@ export function WhyUs() {
       )
 
       if (ref.current) observer.observe(ref.current)
-
       return () => observer.disconnect()
     }, [])
 
     useEffect(() => {
       if (!startCounting) return
-
-      const num = parseInt(value)
-      const suffix = value.replace(num, "")
 
       let current = 0
       const step = Math.max(Math.floor(duration / num), 15)
@@ -49,10 +48,7 @@ export function WhyUs() {
       }, step)
 
       return () => clearInterval(timer)
-    }, [startCounting, value, duration])
-
-    const num = parseInt(value)
-    const suffix = value.replace(num, "")
+    }, [startCounting, num, duration])
 
     return { ref, display: count + suffix }
   }
