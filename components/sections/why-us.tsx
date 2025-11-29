@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useState } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Award, Clock, DollarSign, Headphones } from "lucide-react"
@@ -11,47 +11,38 @@ export function WhyUs() {
   const { language } = useLanguage()
   const t = translations[language]
 
-  // Counter with "start only when visible"
-  const useCountUpWhenVisible = (value: string | number, duration = 2000) => {
-    const ref = useRef<HTMLDivElement>(null)
-    const [startCounting, setStartCounting] = useState(false)
-    const [count, setCount] = useState(0)
+  // عداد: يبدأ فورًا – كله يخلص في 2 ثانية – الأصغر يخلص الأول
+const useCountUpAuto = (value: string | number, maxDuration = 2000) => {
+  const [count, setCount] = useState(0)
 
-    const num = typeof value === "number" ? value : parseInt(value)
-    const suffix = typeof value === "string" ? value.replace(num.toString(), "") : ""
+  const num = typeof value === "number" ? value : parseInt(value)
+  const suffix = typeof value === "string" ? value.replace(num.toString(), "") : ""
 
-    useEffect(() => {
-      const observer = new IntersectionObserver(
-        (entries) => {
-          if (entries[0].isIntersecting) {
-            setStartCounting(true)
-            observer.disconnect()
-          }
-        },
-        { threshold: 0.3 }
-      )
+  useEffect(() => {
+    let current = 0
 
-      if (ref.current) observer.observe(ref.current)
-      return () => observer.disconnect()
-    }, [])
+    // عدد الخطوات ثابت = 120 خطوة خلال 2 ثانية
+    const steps = 120
+    const stepTime = maxDuration / steps
+    const increment = num / steps
 
-    useEffect(() => {
-      if (!startCounting) return
+    const timer = setInterval(() => {
+      current += increment
 
-      let current = 0
-      const step = Math.max(Math.floor(duration / num), 15)
+      if (current >= num) {
+        setCount(num)
+        clearInterval(timer)
+      } else {
+        setCount(Math.floor(current))
+      }
+    }, stepTime)
 
-      const timer = setInterval(() => {
-        current += 1
-        setCount(current)
-        if (current >= num) clearInterval(timer)
-      }, step)
+    return () => clearInterval(timer)
+  }, [num, maxDuration])
 
-      return () => clearInterval(timer)
-    }, [startCounting, num, duration])
+  return count + suffix
+}
 
-    return { ref, display: count + suffix }
-  }
 
   const features = [
     {
@@ -90,6 +81,8 @@ export function WhyUs() {
   return (
     <section className="py-20">
       <div className="container max-w-full">
+        
+        {/* Header */}
         <div className="text-center space-y-4 mb-16">
           <Badge variant="secondary">لماذا نحن</Badge>
           <h2 className="text-3xl lg:text-5xl font-bold text-balance">{t.whyUsTitle}</h2>
@@ -127,17 +120,14 @@ export function WhyUs() {
           ))}
         </div>
 
-        {/* Achievements */}
+        {/* Achievements (العدادات) */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
           {achievements.map((achievement, index) => {
-            const { ref, display } = useCountUpWhenVisible(achievement.number)
+            const display = useCountUpAuto(achievement.number, 2000) // ← هنا المدة كلها 2s
 
             return (
               <div key={index} className="text-center space-y-2">
-                <div
-                  ref={ref}
-                  className="text-3xl lg:text-4xl font-bold text-primary"
-                >
+                <div className="text-3xl lg:text-4xl font-bold text-primary">
                   {display}
                 </div>
                 <div className="text-sm text-muted-foreground">{achievement.label}</div>
@@ -145,6 +135,7 @@ export function WhyUs() {
             )
           })}
         </div>
+
       </div>
     </section>
   )
